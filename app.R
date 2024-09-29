@@ -2,7 +2,7 @@
 
 library(shiny)
 library(ggplot2)
-library(DT)  # Load the DT package for interactive tables
+library(DT)  
 library(leaflet)
 library(DBI)
 library(RMySQL) 
@@ -11,10 +11,10 @@ library(dplyr)
 
 
 # Define the database connection parameters
-db_host <- "localhost"  # e.g., "localhost"
-db_user <- "root"  # e.g., "root"
-db_password <- "1234"  # e.g., "password"
-db_name <- "cats"  # e.g., "accidents_db"
+db_host <- "localhost" 
+db_user <- "root" 
+db_password <- "1234" 
+db_name <- "cats"  
 
 # Establish a connection to the MySQL database
 con <- dbConnect(RMySQL::MySQL(), 
@@ -24,8 +24,7 @@ con <- dbConnect(RMySQL::MySQL(),
                  password = db_password)
 
 # Query to fetch the data
-data <- dbGetQuery(con, "SELECT * FROM IncidentReports")  # Replace with your actual table name
-
+data <- dbGetQuery(con, "SELECT * FROM IncidentReports")  
 # Close the connection
 dbDisconnect(con)
 
@@ -62,7 +61,7 @@ ui <- fluidPage(
       # State filter
       selectInput("stateFilter", "Select State:",
                   choices = c("All", sort(unique(data$State))),
-                  selected = "All"),  # Default to show all states
+                  selected = "All"),  
       
       # Timezone filter
       checkboxGroupInput("timezoneFilter", "Select Timezones:",
@@ -90,7 +89,7 @@ ui <- fluidPage(
         ),
         tabPanel("Filtered Data Summary",
                  h3("Combined Summary Table"),
-                 DTOutput("dataTable")  # Placeholder for combined summary table
+                 DTOutput("dataTable")  
         )
       )
     )
