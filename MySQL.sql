@@ -8,9 +8,9 @@ CREATE TABLE IncidentReports (
     Start_Lat DECIMAL(9, 6),
     Start_Lng DECIMAL(9, 6),
     Distance_mi DECIMAL(5, 2),
-    Street VARCHAR(255),
-    City VARCHAR(100),
-    County VARCHAR(100),
+    Street VARCHAR(50),
+    City VARCHAR(15),
+    County VARCHAR(10),
     State VARCHAR(50),
     Zipcode VARCHAR(20),
     Country VARCHAR(100),
@@ -25,7 +25,7 @@ CREATE TABLE IncidentReports (
     Wind_Direction VARCHAR(10),
     Wind_Speed_mph DECIMAL(5, 2),
     Precipitation_in DECIMAL(5, 2),
-    Weather_Condition VARCHAR(255),
+    Weather_Condition VARCHAR(25),
     Amenity BOOLEAN,
     Bump BOOLEAN,
     Crossing BOOLEAN,
@@ -47,7 +47,7 @@ CREATE TABLE IncidentReports (
 
 -- drop table IncidentReports;
 
-select count(*) from IncidentReports limit 100;
+select * from IncidentReports limit 100;
 Describe IncidentReports;
 
 -- Load data from csv file into the table. Requires restarting of mysql server
