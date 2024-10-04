@@ -1,20 +1,12 @@
 library(shiny)
-library(bslib)
 library(RMySQL)
-library(leaflet)
 library(DT)
 library(googleVis)
 library(dplyr)
 library(ggplot2)
 library(googleway)
-library(ggmap)
 
-
-
-api_key <- ""
-#register_google(key = "")
-
-
+api_key <- "API_KEY"
 
 # Define the database connection parameters
 db_host <- "localhost" 
@@ -87,9 +79,6 @@ ui <- page_sidebar(
     nav_panel("Temperature Humidity Relation", 
               h4("Temperature Vs Humidity Heatmap"),
               plotOutput("tempHumidityHeatmap")),
-    # nav_panel("Incident Map",
-    #           h4("Incident Location Map"),
-    #           leafletOutput("incidentMap", height = "600px")),
     nav_panel("Incident Map",
               h4("Incident Location Map"),
               google_mapOutput(outputId ="googleMap22", height = "600px")),
@@ -111,12 +100,11 @@ server <- function(input, output) {
         Visibility_mi >= input$visibility_range[1],
         Visibility_mi <= input$visibility_range[2]
       ) %>%
-      slice_head(n = 1000)  # This line limits the output to the first 100 rows
+      slice_head(n = 20000)  
   })
   
   # Severity Analysis Plot using Google Charts
   output$severityPlot <- renderGvis({
-    # Summarize the count of accidents by severity
     severity_count <- filtered_data() %>%
       group_by(Severity) %>%
       summarise(Accident_Count = n(), .groups = 'drop') %>%
@@ -127,15 +115,14 @@ server <- function(input, output) {
                  xvar = "Severity", 
                  yvar = "Accident_Count", 
                  options = list(
-                              #title = "Accident Severity Distribution",
-                                hAxis = "{title: 'Severity Level'}",  # Correctly define horizontal axis
-                                vAxis = "{title: 'Count of Accidents'}",  # Correctly define vertical axis
+                                hAxis = "{title: 'Severity Level'}",  
+                                vAxis = "{title: 'Count of Accidents'}",  
                                 width = '100%', height = '100%',
                                 legend = "none",
-                                chartArea = "{left: 80, top: 50, width: '75%', height: '70%'}"))  # Adjust chart area if needed
+                                chartArea = "{left: 80, top: 50, width: '75%', height: '70%'}"))  
   })
   
-  
+
   
   # Accidents Over Time Plot
   output$accidentsOverTimePlot <- renderGvis({
@@ -147,33 +134,32 @@ server <- function(input, output) {
                   xvar = "Date", 
                   yvar = "Accident_Count", 
                   options = list(
-                    hAxis = "{title: 'Date', format: 'MMM dd, yyyy', gridlines: {count: 15}}",  # Set date format
+                    hAxis = "{title: 'Date', format: 'MMM dd, yyyy', gridlines: {count: 15}}", 
                     vAxis = "{title: 'Count of Accidents'}",
                     width = '100%', 
                     height = '100%',
-                    legend = "none"  # Hide legend if not needed
+                    legend = "none"  
                   ))
   })
   
   
   # Scatter Plot for Accidents vs Visibility using Google Charts with Legend
   output$visibilityScatterPlot <- renderGvis({
-    # Summarize data to get accident count for each visibility level
     visibility_count <- filtered_data() %>%
       group_by(Visibility_mi) %>%
       summarise(Accident_Count = n(), .groups = 'drop') %>%
-      mutate(Visibility_mi = round(Visibility_mi, 1))  # Round visibility to avoid too many levels
+      mutate(Visibility_mi = round(Visibility_mi, 1))  
     
     # Create scatter plot
     gvisScatterChart(visibility_count,
                      options = list(
-                                    #title = "Accidents vs Visibility",
                                     hAxis = "{title:'Visibility (miles)'}",
                                     vAxis = "{title:'Accident Count'}",
                                     pointSize = 5,
                                     width = '100%', height = '100%',
                                     legend = "none"))
   })
+  
   
   output$severityVisibilityPlot <- renderPlot({
     # Group data by Visibility and Severity and calculate accident counts
@@ -184,15 +170,16 @@ server <- function(input, output) {
     # Create the bar plot with ggplot
     ggplot(severity_visibility, aes(x = Visibility_mi, y = Accident_Count, fill = as.factor(Severity))) +
       geom_bar(stat = "identity", position = "stack") +
-      scale_fill_brewer(palette = "Set1") +  # Choose a color palette for severity levels
+      scale_fill_brewer(palette = "Set1") + 
+      scale_x_continuous(breaks = seq(0, max(severity_visibility$Visibility_mi, na.rm = TRUE), by = 5)) + 
       labs(title = "Accidents by Severity and Visibility", 
            x = "Visibility (miles)", 
            y = "Accident Count",
            fill = "Severity") +
       theme_minimal() +
       theme(
-        plot.title = element_text(hjust = 0.5),  # Center the title
-        axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+        plot.title = element_text(hjust = 0.5),  
+        axis.text.x = element_text(angle = 45, hjust = 1)  
       )
   })
   
@@ -200,27 +187,25 @@ server <- function(input, output) {
 
   # Weather Condition Pie Chart using Google Charts
   output$weatherConditionPie <- renderGvis({
-    # Summarize the count of accidents for each weather condition
     weather_count <- filtered_data() %>%
       group_by(Weather_Condition) %>%
       summarise(Accident_Count = n(), .groups = 'drop') %>%
-      mutate(Percentage = round((Accident_Count / sum(Accident_Count)) * 100, 1))  # Calculate percentage
+      mutate(Percentage = round((Accident_Count / sum(Accident_Count)) * 100, 1)) 
     
     # Create a pie chart with Weather_Condition and Percentage
     gvisPieChart(weather_count,
                  labelvar = "Weather_Condition", 
                  numvar = "Percentage",
                  options = list(
-                   #title = "Accident Percentage by Weather Condition",
                    width = '100%', height = '100%',
-                   pieHole = 0.4,  # Optional: Creates a donut-style chart
+                   pieHole = 0.4, 
                    legend = "{position: 'right'}",
-                   slices = "{offset: 0.1}"  # Optional: Adds separation between slices
+                   slices = "{offset: 0.1}"  
                  ))
   })
   
   
-  
+  # Heatmap for temperature and humidity
   output$tempHumidityHeatmap <- renderPlot({
     binned_data <- filtered_data() %>%
       mutate(Temperature_F = cut(Temperature_F, breaks = seq(min(Temperature_F), max(Temperature_F), by = 5), include.lowest = TRUE),
@@ -242,28 +227,11 @@ server <- function(input, output) {
     datatable(filtered_data(), options = list(pageLength = 10), rownames = FALSE)
   })
   
-  # output$incidentMap <- renderLeaflet({
-  #   leaflet(filtered_data()) %>%
-  #     addTiles() %>%
-  #     addCircleMarkers(
-  #       lng = ~Start_Lng,  
-  #       lat = ~Start_Lat,  
-  #       radius = 3,  
-  #       color = "blue",  
-  #       stroke = FALSE,
-  #       fillOpacity = 0.5,
-  #       popup = ~paste("Severity:", Severity, "<br>",
-  #                      "Temperature:", Temperature_F, "<br>",
-  #                      "Date:", Start_Time)
-  #     )
-  # })
-  
 
+  # Google maps for visualizing incidents
   output$googleMap22 <- renderGoogle_map({
-    # Get the data from the reactive expression
     data <- filtered_data()
     
-    # Ensure lat and long are numeric
     data$Start_Lat <- as.numeric(data$Start_Lat)
     data$Start_Long <- as.numeric(data$Start_Lng)
     data$hover_text <- paste(
